@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Meeting Tracker</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+        }
+        .meeting-card {
+            transition: all 0.3s ease;
+        }
+        .meeting-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-6 max-w-7xl">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Client Meeting Dashboard</h1>
+
+        <!-- Two-Column Layout for Meetings -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- TAM Meetings -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Upcoming TAM Meetings</h2>
+                <div id="tam-meetings" class="space-y-4"></div>
+            </div>
+            <!-- vCIO Meetings -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Upcoming vCIO Meetings</h2>
+                <div id="vcio-meetings" class="space-y-4"></div>
+            </div>
+        </div>
+
+        <!-- Add Client Form -->
+        <div class="bg-white p-6 rounded-lg shadow mb-8">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Add New Client</h2>
+            <form id="add-client-form" class="space-y-4">
+                <div>
+                    <label for="client-name" class="block text-sm font-medium text-gray-600">Client Name</label>
+                    <input type="text" id="client-name" class="w-full p-2 border rounded-md" required>
+                </div>
+                <div>
+                    <label for="tam-frequency" class="block text-sm font-medium text-gray-600">TAM Frequency</label>
+                    <select id="tam-frequency" class="w-full p-2 border rounded-md" required>
+                        <option value="Monthly">Monthly</option>
+                        <option value="Quarterly">Quarterly</option>
+                        <option value="Semi-Annually">Semi-Annually</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="tam-last-meeting" class="block text-sm font-medium text-gray-600">Last TAM Meeting Date</label>
+                    <input type="date" id="tam-last-meeting" class="w-full p-2 border rounded-md" required>
+                </div>
+                <div>
+                    <label for="vcio-frequency" class="block text-sm font-medium text-gray-600">vCIO Frequency</label>
+                    <select id="vcio-frequency" class="w-full p-2 border rounded-md" required>
+                        <option value="Monthly">Monthly</option>
+                        <option value="Quarterly">Quarterly</option>
+                        <option value="Semi-Annually">Semi-Annually</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="vcio-last-meeting" class="block text-sm font-medium text-gray-600">Last vCIO Meeting Date</label>
+                    <input type="date" id="vcio-last-meeting" class="w-full p-2 border rounded-md" required>
+                </div>
+                <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600">Add Client</button>
+            </form>
+        </div>
+
+        <!-- Meeting History -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Meeting History</h2>
+            <div id="meeting-history" class="space-y-2"></div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize data with clients from Excel
+        let clients = JSON.parse(localStorage.getItem('clients')) || [
+            { id: '1', name: 'Airport Chevrolet', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '2', name: 'American Industrial Door', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '3', name: 'Ascentron', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '4', name: 'Behymer Sorenson & Price', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '5', name: 'Bills Glass', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '6', name: 'Bob Drake Reproductions', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '7', name: 'Botts Kau Schulz', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '8', name: 'Cascade Eyecare Center', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '9', name: 'CBarC', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '10', name: 'CC Constructors', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '11', name: 'Cowhorn Vineyard', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '12', name: 'Crater Chiropractic', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '13', name: 'David M. Trask MD', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '14', name: 'Gates Home Furnishings', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '15', name: 'Hays Oil Company', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '16', name: 'Hy-Speed Machining', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '17', name: 'Jacqueline Amato MD', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '18', name: 'James Hamilton Construction', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '19', name: 'Lewellyn Wealth', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '20', name: 'Lifeline Computer Solutions', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '21', name: 'McCully House Inn', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '22', name: 'McLane Plumbing', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '23', name: 'Mountain View Estates', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '24', name: 'Neathamer Surveying', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '25', name: 'NIC Industries', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '26', name: 'Norman Peterson & Associates', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '27', name: 'Noveske Rifleworks', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '28', name: 'Oregon Ear Nose and Throat', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '29', name: 'Overhead Door Company of Klamath Falls', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '30', name: 'Retirement Planning Specialists', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '31', name: 'Rothfus Family Dental', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '32', name: 'Southern Oregon Subaru', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '33', name: 'Sunday Afternoons', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '34', name: 'Superior Athletic Club', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '35', name: 'TC Chevy', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]},
+            { id: '36', name: 'Walsh Tax Services', meetings: [
+                { type: 'TAM', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] },
+                { type: 'vCIO', frequency: 'Quarterly', lastMeetingDate: '2025-01-01', nextMeetingDueDate: '2025-04-01', status: 'Pending', history: [{ date: '2025-01-01' }] }
+            ]}
+        ];
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('clients', JSON.stringify(clients));
+        }
+
+        // Calculate next due date
+        function calculateNextDueDate(lastDate, frequency) {
+            const date = new Date(lastDate);
+            if (frequency === 'Monthly') date.setMonth(date.getMonth() + 1);
+            else if (frequency === 'Quarterly') date.setMonth(date.getMonth() + 3);
+            else if (frequency === 'Semi-Annually') date.setMonth(date.getMonth() + 6);
+            return date.toISOString().split('T')[0];
+        }
+
+        // Check if meeting is due within 30 days
+        function isDueWithin30Days(dueDate) {
+            const today = new Date();
+            const due = new Date(dueDate);
+            const diffTime = due - today;
+            const diffDays = diffTime / (1000 * 60 * 60 * 24);
+            return diffDays >= 0 && diffDays <= 30;
+        }
+
+        // Render meetings
+        function renderMeetings() {
+            const tamContainer = document.getElementById('tam-meetings');
+            const vcioContainer = document.getElementById('vcio-meetings');
+            tamContainer.innerHTML = '';
+            vcioContainer.innerHTML = '';
+
+            clients.forEach(client => {
+                client.meetings.forEach(meeting => {
+                    if (meeting.status === 'Pending') {
+                        const container = meeting.type === 'TAM' ? tamContainer : vcioContainer;
+                        const div = document.createElement('div');
+                        div.className = 'meeting-card bg-gray-50 p-4 rounded-md shadow';
+                        div.innerHTML = `
+                            <h3 class="text-lg font-medium text-gray-800">${client.name}</h3>
+                            <p class="text-sm text-gray-600">Due: ${meeting.nextMeetingDueDate}</p>
+                            <p class="text-sm text-gray-600">Frequency: ${meeting.frequency}</p>
+                            <p class="text-sm ${new Date(meeting.nextMeetingDueDate) < new Date() ? 'text-red-500' : 'text-gray-600'}">Status: ${new Date(meeting.nextMeetingDueDate) < new Date() ? 'Overdue' : 'Upcoming'}</p>
+                            <form class="mt-2 mark-done-form" data-client-id="${client.id}" data-meeting-type="${meeting.type}">
+                                <input type="date" class="p-2 border rounded-md" required>
+                                <button type="submit" class="bg-blue-500 text-white px-4 py-2 ml-2 rounded-md hover:bg-blue-600">Mark as Done</button>
+                            </form>
+                        `;
+                        container.appendChild(div);
+                    }
+                });
+            });
+
+            // Render history
+            const historyContainer = document.getElementById('meeting-history');
+            historyContainer.innerHTML = '';
+            clients.forEach(client => {
+                client.meetings.forEach(meeting => {
+                    meeting.history.forEach(record => {
+                        const div = document.createElement('div');
+                        div.className = 'p-2 border-b';
+                        div.innerHTML = `
+                            <p class="text-sm font-medium">${client.name} - ${meeting.type}</p>
+                            <p class="text-sm text-gray-600">Completed: ${record.date}</p>
+                        `;
+                        historyContainer.appendChild(div);
+                    });
+                });
+            });
+        }
+
+        // Handle adding client
+        document.getElementById('add-client-form').addEventListener('submit', e => {
+            e.preventDefault();
+            const name = document.getElementById('client-name').value;
+            const tamFrequency = document.getElementById('tam-frequency').value;
+            const tamLastMeeting = document.getElementById('tam-last-meeting').value;
+            const vcioFrequency = document.getElementById('vcio-frequency').value;
+            const vcioLastMeeting = document.getElementById('vcio-last-meeting').value;
+
+            clients.push({
+                id: Date.now().toString(),
+                name,
+                meetings: [
+                    {
+                        type: 'TAM',
+                        frequency: tamFrequency,
+                        lastMeetingDate: tamLastMeeting,
+                        nextMeetingDueDate: calculateNextDueDate(tamLastMeeting, tamFrequency),
+                        status: 'Pending',
+                        history: tamLastMeeting ? [{ date: tamLastMeeting }] : []
+                    },
+                    {
+                        type: 'vCIO',
+                        frequency: vcioFrequency,
+                        lastMeetingDate: vcioLastMeeting,
+                        nextMeetingDueDate: calculateNextDueDate(vcioLastMeeting, vcioFrequency),
+                        status: 'Pending',
+                        history: vcioLastMeeting ? [{ date: vcioLastMeeting }] : []
+                    }
+                ]
+            });
+
+            saveData();
+            renderMeetings();
+            e.target.reset();
+        });
+
+        // Handle marking meeting as done
+        document.addEventListener('submit', e => {
+            if (e.target.classList.contains('mark-done-form')) {
+                e.preventDefault();
+                const clientId = e.target.dataset.clientId;
+                const meetingType = e.target.dataset.meetingType;
+                const actualDate = e.target.querySelector('input[type="date"]').value;
+
+                const client = clients.find(c => c.id === clientId);
+                const meeting = client.meetings.find(m => m.type === meetingType);
+
+                meeting.lastMeetingDate = actualDate;
+                meeting.nextMeetingDueDate = calculateNextDueDate(actualDate, meeting.frequency);
+                meeting.history.push({ date: actualDate });
+
+                saveData();
+                renderMeetings();
+            }
+        });
+
+        // Initial render
+        renderMeetings();
+    </script>
+</body>
+</html>
